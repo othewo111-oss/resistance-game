@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المقاومة - The Resistance</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #1a1a24;
+    --border: #2a2a3a;
+    --gold: #c9a84c;
+    --gold-light: #f0d080;
+    --red: #c0392b;
+    --red-light: #e74c3c;
+    --green: #1a6b3a;
+    --green-light: #27ae60;
+    --blue: #1a3a6b;
+    --blue-light: #2980b9;
+    --text: #e8e0d0;
+    --text-dim: #8a8070;
+    --spy: #8b0000;
+    --resist: #003366;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* ===== SCREENS ===== */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ===== WELCOME SCREEN ===== */
+  #welcome {
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: radial-gradient(ellipse at 50% 0%, #1a0a00 0%, var(--bg) 60%);
+  }
+
+  .logo-area {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: fadeDown 0.8s ease;
+  }
+
+  .logo-emblem {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 1.5rem;
+    position: relative;
+  }
+
+  .logo-emblem svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 20px rgba(201,168,76,0.5));
+  }
+
+  .logo-title {
+    font-family: 'Amiri', serif;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 40px rgba(201,168,76,0.3);
+    line-height: 1.2;
+  }
+
+  .logo-sub {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+  }
+
+  .welcome-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+    animation: fadeUp 0.8s 0.2s both ease;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to left, transparent, var(--border));
+  }
+
+  .player-count-selector {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .count-btn {
+    aspect-ratio: 1;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    border-radius: 10px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .count-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .count-btn.selected {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #000;
+    box-shadow: 0 0 20px rgba(201,168,76,0.3);
+  }
+
+  .player-inputs { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem; }
+
+  .player-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    transition: border-color 0.2s;
+  }
+  .player-input-row:focus-within { border-color: var(--gold); }
+
+  .player-num {
+    width: 28px;
+    height: 28px;
+    background: var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  .player-input-row input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.95rem;
+    direction: rtl;
+  }
+
+  .player-input-row input::placeholder { color: var(--text-dim); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--gold), #a07820);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(201,168,76,0.3); }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ===== ROLE REVEAL SCREEN ===== */
+  #role-reveal {
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: var(--bg);
+  }
+
+  .reveal-container {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+
+  .reveal-title {
+    font-family: 'Amiri', serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+  }
+
+  .reveal-subtitle { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 2rem; }
+
+  .role-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 2.5rem;
+    margin-bottom: 1.5rem;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s;
+    border: 2px solid var(--border);
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .role-card.spy-card { border-color: var(--red); background: linear-gradient(135deg, #1a0a0a, #0f0505); }
+  .role-card.resist-card { border-color: var(--blue-light); background: linear-gradient(135deg, #0a0f1a, #050810); }
+
+  .role-card-back {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #1a1a24, #111118);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    transition: opacity 0.5s;
+  }
+
+  .role-card-front {
+    opacity: 0;
+    transition: opacity 0.5s;
+    text-align: center;
+  }
+
+  .role-card.revealed .role-card-back { opacity: 0; pointer-events: none; }
+  .role-card.revealed .role-card-front { opacity: 1; }
+
+  .role-icon { font-size: 4rem; margin-bottom: 0.5rem; }
+  .role-name { font-family: 'Amiri', serif; font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .role-name.spy { color: var(--red-light); }
+  .role-name.resist { color: #4a9eff; }
+  .role-desc { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; max-width: 240px; }
+
+  .spy-allies { margin-top: 1rem; font-size: 0.8rem; color: var(--red-light); }
+
+  .tap-hint { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.3rem; }
+  .lock-icon { font-size: 2rem; color: var(--text-dim); }
+  .card-player-name { font-size: 1.1rem; color: var(--gold); margin-bottom: 0.5rem; }
+
+  .reveal-nav {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ===== GAME SCREEN ===== */
+  #game {
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .game-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-title { font-family: 'Amiri', serif; font-size: 1.2rem; color: var(--gold); }
+  .header-round { font-size: 0.75rem; color: var(--text-dim); }
+
+  .score-board {
+    padding: 1rem 1.5rem;
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .score-mission {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    text-align: center;
+    background: var(--card);
+    transition: all 0.3s;
+  }
+
+  .score-mission.current { border-color: var(--gold); box-shadow: 0 0 15px rgba(201,168,76,0.2); }
+  .score-mission.success { border-color: var(--green-light); background: rgba(39,174,96,0.1); }
+  .score-mission.fail { border-color: var(--red-light); background: rgba(192,57,43,0.1); }
+
+  .mission-num { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 0.1em; }
+  .mission-players { font-size: 1rem; font-weight: 700; color: var(--gold); }
+  .mission-result { font-size: 1.1rem; margin-top: 0.2rem; }
+
+  .game-content { flex: 1; padding: 1rem 1.5rem 2rem; overflow-y: auto; }
+
+  /* Phase cards */
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .phase-badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+
+  .phase-badge.select { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid var(--gold); }
+  .phase-badge.vote { background: rgba(41,128,185,0.15); color: #4a9eff; border: 1px solid #4a9eff; }
+  .phase-badge.mission { background: rgba(39,174,96,0.15); color: var(--green-light); border: 1px solid var(--green-light); }
+
+  .phase-title { font-family: 'Amiri', serif; font-size: 1.3rem; }
+  .phase-desc { font-size: 0.8rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 1.5rem; }
+
+  .leader-badge {
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .leader-crown { font-size: 1.5rem; }
+  .leader-info { flex: 1; }
+  .leader-label { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 0.1em; }
+  .leader-name { font-size: 1rem; font-weight: 600; color: var(--gold); }
+
+  .players-grid { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .player-row:hover { border-color: var(--gold); }
+  .player-row.selected { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+  .player-row.disabled { cursor: default; opacity: 0.6; }
+
+  .player-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    background: var(--border);
+    color: var(--text-dim);
+  }
+
+  .player-row.selected .player-avatar { background: var(--gold); color: #000; }
+
+  .player-info { flex: 1; }
+  .player-name-game { font-size: 0.95rem; font-weight: 600; }
+  .player-tag { font-size: 0.7rem; color: var(--text-dim); }
+
+  .check-icon { font-size: 1.2rem; opacity: 0; transition: opacity 0.2s; }
+  .player-row.selected .check-icon { opacity: 1; }
+
+  .slots-info {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+  }
+
+  .slots-info span { color: var(--gold); font-weight: 700; }
+
+  /* Voting phase */
+  .voting-section { margin-bottom: 1.5rem; }
+  .voting-player {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+  }
+
+  .voting-player .player-avatar { background: var(--border); color: var(--text); }
+  .vote-buttons { display: flex; gap: 0.5rem; margin-right: auto; }
+
+  .vote-btn {
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .vote-btn.approve:hover, .vote-btn.approve.voted { background: rgba(39,174,96,0.2); border-color: var(--green-light); color: var(--green-light); }
+  .vote-btn.reject:hover, .vote-btn.reject.voted { background: rgba(192,57,43,0.2); border-color: var(--red-light); color: var(--red-light); }
+
+  /* Mission phase */
+  .mission-player-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+  }
+
+  .mission-player-row .player-avatar { background: rgba(39,174,96,0.2); color: var(--green-light); }
+
+  .mission-buttons { display: flex; gap: 0.5rem; margin-right: auto; }
+  .mission-btn {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .mission-btn.success-btn:hover, .mission-btn.success-btn.chosen { background: rgba(39,174,96,0.2); border-color: var(--green-light); color: var(--green-light); }
+  .mission-btn.fail-btn:hover, .mission-btn.fail-btn.chosen { background: rgba(192,57,43,0.2); border-color: var(--red-light); color: var(--red-light); }
+
+  /* Result modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 1.5rem;
+    animation: fadeIn 0.3s ease;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.hidden { display: none; }
+
+  .modal-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    border: 2px solid var(--border);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    animation: scaleIn 0.3s ease;
+  }
+
+  .modal-icon { font-size: 4rem; margin-bottom: 1rem; }
+  .modal-title { font-family: 'Amiri', serif; font-size: 2rem; margin-bottom: 0.5rem; }
+  .modal-title.success { color: var(--green-light); }
+  .modal-title.fail { color: var(--red-light); }
+  .modal-title.neutral { color: var(--gold); }
+  .modal-body { font-size: 0.9rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 1.5rem; }
+
+  /* Win screen */
+  #win-screen {
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .win-icon { font-size: 5rem; margin-bottom: 1.5rem; animation: pulse 2s infinite; }
+  .win-title { font-family: 'Amiri', serif; font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .win-title.resistance { color: var(--blue-light); }
+  .win-title.spies { color: var(--red-light); }
+  .win-subtitle { font-size: 1rem; color: var(--text-dim); margin-bottom: 2rem; }
+
+  .final-scores {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 2rem;
+  }
+
+  .score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .score-row:last-child { border-bottom: none; }
+  .score-label { font-size: 0.85rem; color: var(--text-dim); }
+  .score-value { font-size: 1rem; font-weight: 700; }
+  .score-value.g { color: var(--green-light); }
+  .score-value.r { color: var(--red-light); }
+
+  /* Rejected votes counter */
+  .rejected-counter {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+    align-items: center;
+  }
+  .rejected-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+  .rejected-dot.filled { background: var(--red-light); }
+  .rejected-label { font-size: 0.7rem; color: var(--text-dim); margin-right: 0.5rem; }
+
+  /* Animations */
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+  .team-display {
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .team-display strong { color: var(--gold); }
+
+  .hint-box {
+    background: rgba(201,168,76,0.05);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  .mission-table {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+  }
+
+  .mission-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+  }
+
+  .mission-table th, .mission-table td {
+    padding: 0.4rem 0.5rem;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+
+  .mission-table th { background: var(--surface); color: var(--gold); font-weight: 600; }
+  .mission-table td { color: var(--text-dim); }
+  .mission-table tr.current-row td { color: var(--text); background: rgba(201,168,76,0.05); }
+
+  .vote-summary {
+    display: flex;
+    justify-content: space-between;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .reveal-hidden-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    color: var(--gold);
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    width: 100%;
+    transition: all 0.2s;
+  }
+  .reveal-hidden-btn:hover { background: rgba(201,168,76,0.2); }
+
+</style>
+</head>
+<body>
+
+<!-- WELCOME SCREEN -->
+<div id="welcome" class="screen active">
+  <div class="logo-area">
+    <div class="logo-emblem">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="50,5 95,75 5,75" fill="none" stroke="#c9a84c" stroke-width="2"/>
+        <polygon points="50,20 82,68 18,68" fill="rgba(201,168,76,0.05)" stroke="#c9a84c" stroke-width="1" opacity="0.5"/>
+        <circle cx="50" cy="50" r="12" fill="none" stroke="#c9a84c" stroke-width="1.5"/>
+        <circle cx="50" cy="50" r="4" fill="#c9a84c"/>
+        <line x1="50" y1="5" x2="50" y2="38" stroke="#c9a84c" stroke-width="1" opacity="0.4"/>
+        <line x1="95" y1="75" x2="62" y2="57" stroke="#c9a84c" stroke-width="1" opacity="0.4"/>
+        <line x1="5" y1="75" x2="38" y2="57" stroke="#c9a84c" stroke-width="1" opacity="0.4"/>
+      </svg>
+    </div>
+    <div class="logo-title">المقاومة</div>
+    <div class="logo-sub">The Resistance</div>
+  </div>
+
+  <div class="welcome-card">
+    <div class="section-label">عدد اللاعبين</div>
+    <div class="player-count-selector">
+      <button class="count-btn" onclick="selectCount(5)">٥</button>
+      <button class="count-btn" onclick="selectCount(6)">٦</button>
+      <button class="count-btn" onclick="selectCount(7)">٧</button>
+      <button class="count-btn" onclick="selectCount(8)">٨</button>
+      <button class="count-btn" onclick="selectCount(9)">٩</button>
+      <button class="count-btn" onclick="selectCount(10)">١٠</button>
+    </div>
+
+    <div class="section-label">أسماء اللاعبين</div>
+    <div class="player-inputs" id="player-inputs"></div>
+
+    <button class="btn-primary" onclick="startGame()">🗡 ابدأ اللعبة</button>
+  </div>
+</div>
+
+<!-- ROLE REVEAL SCREEN -->
+<div id="role-reveal" class="screen">
+  <div class="reveal-container">
+    <div class="reveal-title">توزيع الأدوار</div>
+    <div class="reveal-subtitle">مرر الهاتف لكل لاعب ليرى دوره بسرية</div>
+    <div class="role-card" id="role-card" onclick="revealRole()">
+      <div class="role-card-back">
+        <div class="lock-icon">🔒</div>
+        <div class="card-player-name" id="reveal-player-name"></div>
+        <div class="tap-hint">اضغط لرؤية دورك</div>
+      </div>
+      <div class="role-card-front" id="role-card-front"></div>
+    </div>
+    <div class="reveal-nav">
+      <button class="btn-secondary" onclick="nextReveal()" id="next-reveal-btn">التالي ←</button>
+    </div>
+    <div style="margin-top:1rem; font-size:0.75rem; color:var(--text-dim); text-align:center;" id="reveal-progress"></div>
+  </div>
+</div>
+
+<!-- MAIN GAME SCREEN -->
+<div id="game" class="screen">
+  <div class="game-header">
+    <div>
+      <div class="header-title">المقاومة</div>
+      <div class="header-round" id="header-round"></div>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+      <span style="font-size:0.75rem; color:var(--green-light)" id="header-resist-score"></span>
+      <span style="font-size:0.75rem; color:var(--text-dim)">|</span>
+      <span style="font-size:0.75rem; color:var(--red-light)" id="header-spy-score"></span>
+    </div>
+  </div>
+
+  <div class="score-board" id="score-board"></div>
+  <div class="game-content" id="game-content"></div>
+</div>
+
+<!-- WIN SCREEN -->
+<div id="win-screen" class="screen">
+  <div id="win-icon" class="win-icon"></div>
+  <div id="win-title" class="win-title"></div>
+  <div id="win-subtitle" class="win-subtitle"></div>
+  <div class="final-scores" id="final-scores"></div>
+  <button class="btn-primary" style="max-width:300px" onclick="restartGame()">🔄 لعبة جديدة</button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modal">
+  <div class="modal-card">
+    <div class="modal-icon" id="modal-icon"></div>
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <button class="btn-primary" id="modal-btn" onclick="closeModal()">حسناً</button>
+  </div>
+</div>
+
+<script>
+// ===== GAME DATA =====
+const MISSION_TABLE = {
+  5:  [2,3,2,3,3],
+  6:  [2,3,4,3,4],
+  7:  [2,3,3,4,4],
+  8:  [3,4,4,5,5],
+  9:  [3,4,4,5,5],
+  10: [3,4,4,5,5]
+};
+
+const SPY_COUNT = { 5:2, 6:2, 7:3, 8:3, 9:3, 10:4 };
+
+// Double fail needed on mission 4 for 7+
+const DOUBLE_FAIL_MISSION = { 7:4, 8:4, 9:4, 10:4 };
+
+let G = {
+  players: [],
+  roles: [], // 'spy' or 'resist'
+  spyList: [],
+  currentMission: 0,
+  missionResults: [], // 'success' or 'fail'
+  leaderIndex: 0,
+  phase: 'select', // select, vote, mission
+  selectedTeam: [],
+  votes: {}, // playerIndex -> 'approve' | 'reject'
+  missionChoices: {}, // playerIndex -> 'success' | 'fail'
+  rejectedCount: 0,
+  resistScore: 0,
+  spyScore: 0,
+  revealIndex: 0,
+  revealed: false
+};
+
+// ===== WELCOME =====
+let selectedCount = 5;
+
+function selectCount(n) {
+  selectedCount = n;
+  document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('selected'));
+  event.target.classList.add('selected');
+  buildInputs(n);
+}
+
+function buildInputs(n) {
+  const container = document.getElementById('player-inputs');
+  container.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const row = document.createElement('div');
+    row.className = 'player-input-row';
+    row.innerHTML = `<div class="player-num">${i+1}</div><input type="text" placeholder="اسم اللاعب ${i+1}" id="pname-${i}">`;
+    container.appendChild(row);
+  }
+}
+
+function startGame() {
+  const names = [];
+  for (let i = 0; i < selectedCount; i++) {
+    const v = document.getElementById(`pname-${i}`)?.value.trim() || `لاعب ${i+1}`;
+    names.push(v);
+  }
+
+  // Assign roles
+  const spyCount = SPY_COUNT[selectedCount];
+  const indices = [...Array(selectedCount).keys()];
+  // Shuffle
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  const spies = indices.slice(0, spyCount);
+
+  G.players = names;
+  G.roles = names.map((_, i) => spies.includes(i) ? 'spy' : 'resist');
+  G.spyList = spies;
+  G.currentMission = 0;
+  G.missionResults = [];
+  G.leaderIndex = Math.floor(Math.random() * selectedCount);
+  G.phase = 'select';
+  G.selectedTeam = [];
+  G.votes = {};
+  G.missionChoices = {};
+  G.rejectedCount = 0;
+  G.resistScore = 0;
+  G.spyScore = 0;
+  G.revealIndex = 0;
+  G.revealed = false;
+
+  showRoleReveal();
+}
+
+// ===== ROLE REVEAL =====
+function showRoleReveal() {
+  showScreen('role-reveal');
+  G.revealIndex = 0;
+  G.revealed = false;
+  showCurrentReveal();
+}
+
+function showCurrentReveal() {
+  const i = G.revealIndex;
+  const card = document.getElementById('role-card');
+  card.classList.remove('revealed', 'spy-card', 'resist-card');
+  G.revealed = false;
+
+  document.getElementById('reveal-player-name').textContent = G.players[i];
+  document.getElementById('reveal-progress').textContent = `${i+1} / ${G.players.length}`;
+
+  const nextBtn = document.getElementById('next-reveal-btn');
+  nextBtn.textContent = i < G.players.length - 1 ? 'التالي ←' : '🗡 ابدأ المهمة الأولى';
+}
+
+function revealRole() {
+  if (G.revealed) return;
+  G.revealed = true;
+
+  const i = G.revealIndex;
+  const role = G.roles[i];
+  const card = document.getElementById('role-card');
+
+  card.classList.add('revealed');
+  card.classList.add(role === 'spy' ? 'spy-card' : 'resist-card');
+
+  let html = '';
+  if (role === 'spy') {
+    const allies = G.spyList.filter(s => s !== i).map(s => G.players[s]);
+    html = `
+      <div class="role-icon">🕵️</div>
+      <div class="role-name spy">جاسوس</div>
+      <div class="role-desc">أنت من الجواسيس. مهمتك إفشال المهام دون أن يكتشفوك.</div>
+      ${allies.length > 0 ? `<div class="spy-allies">🤝 رفاقك: ${allies.join('، ')}</div>` : ''}
+    `;
+  } else {
+    html = `
+      <div class="role-icon">🛡️</div>
+      <div class="role-name resist">مقاومة</div>
+      <div class="role-desc">أنت من المقاومة. اكشف الجواسيس وأنجح 3 مهام لتفوز!</div>
+    `;
+  }
+
+  document.getElementById('role-card-front').innerHTML = html;
+}
+
+function nextReveal() {
+  if (!G.revealed) {
+    showModal('⚠️', 'انتبه!', 'يجب أن يرى اللاعب دوره أولاً قبل التقدم للتالي.', null, 'neutral');
+    return;
+  }
+
+  G.revealIndex++;
+  if (G.revealIndex >= G.players.length) {
+    showGameScreen();
+  } else {
+    G.revealed = false;
+    showCurrentReveal();
+  }
+}
+
+// ===== GAME SCREEN =====
+function showGameScreen() {
+  showScreen('game');
+  renderGame();
+}
+
+function renderGame() {
+  updateHeader();
+  renderScoreBoard();
+  renderPhase();
+}
+
+function updateHeader() {
+  const missionNum = G.currentMission + 1;
+  document.getElementById('header-round').textContent = `المهمة ${missionNum} من 5`;
+  document.getElementById('header-resist-score').textContent = `✅ ${G.resistScore}`;
+  document.getElementById('header-spy-score').textContent = `❌ ${G.spyScore}`;
+}
+
+function renderScoreBoard() {
+  const sb = document.getElementById('score-board');
+  const missionSizes = MISSION_TABLE[G.players.length];
+  sb.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const div = document.createElement('div');
+    div.className = 'score-mission';
+    if (i === G.currentMission) div.classList.add('current');
+    else if (G.missionResults[i] === 'success') div.classList.add('success');
+    else if (G.missionResults[i] === 'fail') div.classList.add('fail');
+
+    let result = '';
+    if (G.missionResults[i] === 'success') result = '✅';
+    else if (G.missionResults[i] === 'fail') result = '❌';
+    else if (i === G.currentMission) result = '⚡';
+
+    div.innerHTML = `
+      <div class="mission-num">م${i+1}</div>
+      <div class="mission-players">${missionSizes[i]}</div>
+      <div class="mission-result">${result}</div>
+    `;
+    sb.appendChild(div);
+  }
+}
+
+function renderPhase() {
+  const content = document.getElementById('game-content');
+  if (G.phase === 'select') renderSelectPhase(content);
+  else if (G.phase === 'vote') renderVotePhase(content);
+  else if (G.phase === 'mission') renderMissionPhase(content);
+}
+
+function renderSelectPhase(content) {
+  const missionSize = MISSION_TABLE[G.players.length][G.currentMission];
+  const leader = G.players[G.leaderIndex];
+
+  let rejDots = '';
+  for (let i = 0; i < 5; i++) {
+    rejDots += `<div class="rejected-dot${i < G.rejectedCount ? ' filled' : ''}"></div>`;
+  }
+
+  content.innerHTML = `
+    <div class="phase-header">
+      <span class="phase-badge select">اختيار الفريق</span>
+    </div>
+
+    <div class="leader-badge">
+      <div class="leader-crown">👑</div>
+      <div class="leader-info">
+        <div class="leader-label">قائد المهمة</div>
+        <div class="leader-name">${leader}</div>
+      </div>
+    </div>
+
+    <div class="rejected-counter">
+      <span class="rejected-label">رفض متتالي:</span>
+      ${rejDots}
+      <span style="font-size:0.7rem; color:var(--text-dim);">(5 رفض = الجواسيس يفوزون)</span>
+    </div>
+
+    <div class="phase-desc">
+      يختار <strong style="color:var(--gold)">${leader}</strong> فريقاً من <strong style="color:var(--gold)">${missionSize}</strong> ${missionSize === 1 ? 'لاعب' : 'لاعبين'} لتنفيذ المهمة ${G.currentMission+1}.
+    </div>
+
+    <div class="slots-info">تم اختيار <span id="selected-count">0</span> / ${missionSize}</div>
+
+    <div class="players-grid" id="players-list"></div>
+
+    <button class="btn-primary" id="confirm-team-btn" onclick="confirmTeam()" style="opacity:0.4;pointer-events:none;">تأكيد الفريق →</button>
+  `;
+
+  renderPlayerList(missionSize);
+}
+
+function renderPlayerList(missionSize) {
+  const list = document.getElementById('players-list');
+  if (!list) return;
+  list.innerHTML = '';
+  G.players.forEach((name, i) => {
+    const div = document.createElement('div');
+    div.className = 'player-row' + (G.selectedTeam.includes(i) ? ' selected' : '');
+    div.onclick = () => togglePlayer(i, missionSize);
+    const initials = name.charAt(0);
+    div.innerHTML = `
+      <div class="player-avatar">${initials}</div>
+      <div class="player-info">
+        <div class="player-name-game">${name}</div>
+        <div class="player-tag">${i === G.leaderIndex ? '👑 القائد' : 'لاعب'}</div>
+      </div>
+      <div class="check-icon">✓</div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function togglePlayer(i, missionSize) {
+  const idx = G.selectedTeam.indexOf(i);
+  if (idx > -1) {
+    G.selectedTeam.splice(idx, 1);
+  } else {
+    if (G.selectedTeam.length >= missionSize) return;
+    G.selectedTeam.push(i);
+  }
+
+  document.getElementById('selected-count').textContent = G.selectedTeam.length;
+  const btn = document.getElementById('confirm-team-btn');
+  if (G.selectedTeam.length === missionSize) {
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  } else {
+    btn.style.opacity = '0.4';
+    btn.style.pointerEvents = 'none';
+  }
+  renderPlayerList(missionSize);
+}
+
+function confirmTeam() {
+  const missionSize = MISSION_TABLE[G.players.length][G.currentMission];
+  if (G.selectedTeam.length !== missionSize) return;
+  G.phase = 'vote';
+  G.votes = {};
+  renderPhase();
+}
+
+function renderVotePhase(content) {
+  const teamNames = G.selectedTeam.map(i => G.players[i]).join('، ');
+  const leader = G.players[G.leaderIndex];
+
+  content.innerHTML = `
+    <div class="phase-header">
+      <span class="phase-badge vote">التصويت</span>
+    </div>
+
+    <div class="team-display">الفريق المقترح: <strong>${teamNames}</strong></div>
+
+    <div class="hint-box">💡 يصوت الجميع بـ "موافق" أو "رافض". إذا حصل الفريق على أغلبية الموافقات ينفذون المهمة، وإلا يُرفض ويتغير القائد.</div>
+
+    <div class="voting-section" id="vote-list"></div>
+
+    <div class="vote-summary">
+      <span style="color:var(--green-light)">موافق: <strong id="approve-count">0</strong></span>
+      <span style="color:var(--red-light)">رافض: <strong id="reject-count">0</strong></span>
+      <span style="color:var(--text-dim)">لم يصوت: <strong id="pending-count">${G.players.length}</strong></span>
+    </div>
+
+    <button class="btn-primary" id="submit-vote-btn" onclick="submitVotes()" style="opacity:0.4;pointer-events:none;">إرسال التصويت →</button>
+  `;
+
+  renderVoteList();
+}
+
+function renderVoteList() {
+  const list = document.getElementById('vote-list');
+  if (!list) return;
+  list.innerHTML = '';
+  G.players.forEach((name, i) => {
+    const div = document.createElement('div');
+    div.className = 'voting-player';
+    const initials = name.charAt(0);
+    const voted = G.votes[i];
+    div.innerHTML = `
+      <div class="player-avatar">${initials}</div>
+      <div style="flex:1; font-size:0.9rem;">${name}</div>
+      <div class="vote-buttons">
+        <button class="vote-btn approve ${voted === 'approve' ? 'voted' : ''}" onclick="castVote(${i},'approve')">✅ موافق</button>
+        <button class="vote-btn reject ${voted === 'reject' ? 'voted' : ''}" onclick="castVote(${i},'reject')">❌ رافض</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+  updateVoteSummary();
+}
+
+function castVote(playerIdx, vote) {
+  G.votes[playerIdx] = vote;
+  renderVoteList();
+
+  const totalVoted = Object.keys(G.votes).length;
+  const btn = document.getElementById('submit-vote-btn');
+  if (totalVoted === G.players.length) {
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  }
+}
+
+function updateVoteSummary() {
+  const votes = Object.values(G.votes);
+  const approve = votes.filter(v => v === 'approve').length;
+  const reject = votes.filter(v => v === 'reject').length;
+  const pending = G.players.length - votes.length;
+  const ac = document.getElementById('approve-count');
+  const rc = document.getElementById('reject-count');
+  const pc = document.getElementById('pending-count');
+  if (ac) ac.textContent = approve;
+  if (rc) rc.textContent = reject;
+  if (pc) pc.textContent = pending;
+}
+
+function submitVotes() {
+  const votes = Object.values(G.votes);
+  const approve = votes.filter(v => v === 'approve').length;
+  const reject = votes.filter(v => v === 'reject').length;
+
+  if (approve > reject) {
+    // Team approved
+    G.phase = 'mission';
+    G.missionChoices = {};
+    G.rejectedCount = 0;
+    renderPhase();
+  } else {
+    // Team rejected
+    G.rejectedCount++;
+    if (G.rejectedCount >= 5) {
+      // Spies win
+      endGame('spies', 'تم رفض 5 فرق متتالية!');
+      return;
+    }
+    G.leaderIndex = (G.leaderIndex + 1) % G.players.length;
+    G.phase = 'select';
+    G.selectedTeam = [];
+
+    showModal('🚫', 'تم رفض الفريق!', 
+      `${approve} موافق مقابل ${reject} رافض. تنتقل القيادة إلى ${G.players[G.leaderIndex]}.`,
+      () => renderPhase(), 'fail');
+  }
+}
+
+function renderMissionPhase(content) {
+  const teamNames = G.selectedTeam.map(i => G.players[i]).join('، ');
+  const missionNum = G.currentMission + 1;
+  const needDouble = DOUBLE_FAIL_MISSION[G.players.length] === missionNum;
+
+  content.innerHTML = `
+    <div class="phase-header">
+      <span class="phase-badge mission">تنفيذ المهمة</span>
+    </div>
+
+    <div class="team-display">الفريق: <strong>${teamNames}</strong></div>
+
+    <div class="hint-box">
+      🔐 كل عضو في الفريق يختار "نجاح" أو "فشل" بسرية.
+      ${needDouble ? '<br>⚠️ هذه المهمة تحتاج <strong>بطاقتي فشل</strong> لتفشل!' : ''}
+      <br>أعضاء المقاومة <strong>يجب</strong> أن يختاروا "نجاح".
+    </div>
+
+    <div id="mission-list"></div>
+
+    <div class="vote-summary">
+      <span style="color:var(--green-light)">نجاح: <strong id="success-count">0</strong></span>
+      <span style="color:var(--red-light)">فشل: <strong id="fail-count">0</strong></span>
+      <span style="color:var(--text-dim)">لم يختر: <strong id="pending-mission-count">${G.selectedTeam.length}</strong></span>
+    </div>
+
+    <button class="btn-primary" id="submit-mission-btn" onclick="submitMission()" style="opacity:0.4;pointer-events:none;">كشف النتيجة 🎴</button>
+  `;
+
+  renderMissionList();
+}
+
+function renderMissionList() {
+  const list = document.getElementById('mission-list');
+  if (!list) return;
+  list.innerHTML = '';
+  G.selectedTeam.forEach(i => {
+    const name = G.players[i];
+    const chosen = G.missionChoices[i];
+    const div = document.createElement('div');
+    div.className = 'mission-player-row';
+    const initials = name.charAt(0);
+    div.innerHTML = `
+      <div class="player-avatar">${initials}</div>
+      <div style="flex:1; font-size:0.9rem;">${name}</div>
+      <div class="mission-buttons">
+        <button class="mission-btn success-btn ${chosen === 'success' ? 'chosen' : ''}" onclick="chooseMission(${i},'success')">✅ نجاح</button>
+        <button class="mission-btn fail-btn ${chosen === 'fail' ? 'chosen' : ''}" onclick="chooseMission(${i},'fail')">❌ فشل</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+  updateMissionSummary();
+}
+
+function chooseMission(playerIdx, choice) {
+  G.missionChoices[playerIdx] = choice;
+  renderMissionList();
+
+  const totalChosen = Object.keys(G.missionChoices).length;
+  const btn = document.getElementById('submit-mission-btn');
+  if (totalChosen === G.selectedTeam.length) {
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  }
+}
+
+function updateMissionSummary() {
+  const choices = Object.values(G.missionChoices);
+  const succ = choices.filter(c => c === 'success').length;
+  const fail = choices.filter(c => c === 'fail').length;
+  const pending = G.selectedTeam.length - choices.length;
+  const sc = document.getElementById('success-count');
+  const fc = document.getElementById('fail-count');
+  const pc = document.getElementById('pending-mission-count');
+  if (sc) sc.textContent = succ;
+  if (fc) fc.textContent = fail;
+  if (pc) pc.textContent = pending;
+}
+
+function submitMission() {
+  const missionNum = G.currentMission + 1;
+  const needDouble = DOUBLE_FAIL_MISSION[G.players.length] === missionNum;
+  const choices = Object.values(G.missionChoices);
+  const failCount = choices.filter(c => c === 'fail').length;
+  const failThreshold = needDouble ? 2 : 1;
+
+  const success = failCount < failThreshold;
+
+  G.missionResults[G.currentMission] = success ? 'success' : 'fail';
+  if (success) G.resistScore++;
+  else G.spyScore++;
+
+  const resultMsg = success
+    ? `🎉 جميع الأصوات ${failCount === 0 ? 'كانت للنجاح' : `كانت للنجاح (ورقة فشل واحدة غير كافية في هذه المهمة)`}! نقطة للمقاومة.`
+    : `💥 ظهرت ${failCount} بطاقة فشل! نقطة للجواسيس.`;
+
+  // Check win condition
+  if (G.resistScore >= 3) {
+    showModal(success ? '✅' : '✅', 
+      success ? 'المهمة نجحت!' : 'المهمة نجحت!', 
+      resultMsg, 
+      () => endGame('resistance', 'المقاومة نجحت في 3 مهام!'),
+      success ? 'success' : 'fail');
+    return;
+  }
+  if (G.spyScore >= 3) {
+    showModal('❌', 'المهمة فشلت!', resultMsg, () => endGame('spies', 'الجواسيس خربوا 3 مهام!'), 'fail');
+    return;
+  }
+
+  // Next mission
+  G.currentMission++;
+  G.leaderIndex = (G.leaderIndex + 1) % G.players.length;
+  G.phase = 'select';
+  G.selectedTeam = [];
+  G.rejectedCount = 0;
+
+  showModal(
+    success ? '✅' : '❌',
+    success ? 'نجحت المهمة! 🎉' : 'فشلت المهمة! 💥',
+    resultMsg + `\n\nالنتيجة: مقاومة ${G.resistScore} - جواسيس ${G.spyScore}`,
+    () => renderPhase(),
+    success ? 'success' : 'fail'
+  );
+}
+
+// ===== END GAME =====
+function endGame(winner, reason) {
+  showScreen('win-screen');
+
+  const isResist = winner === 'resistance';
+  document.getElementById('win-icon').textContent = isResist ? '🛡️' : '🕵️';
+  const titleEl = document.getElementById('win-title');
+  titleEl.textContent = isResist ? 'فازت المقاومة! 🎉' : 'فاز الجواسيس! 😈';
+  titleEl.className = 'win-title ' + (isResist ? 'resistance' : 'spies');
+  document.getElementById('win-subtitle').textContent = reason;
+
+  const spyNames = G.spyList.map(i => G.players[i]).join('، ');
+  const resistNames = G.players.filter((_, i) => !G.spyList.includes(i)).join('، ');
+
+  document.getElementById('final-scores').innerHTML = `
+    <div class="score-row">
+      <span class="score-label">نتيجة المقاومة</span>
+      <span class="score-value g">${G.resistScore} / 5</span>
+    </div>
+    <div class="score-row">
+      <span class="score-label">نتيجة الجواسيس</span>
+      <span class="score-value r">${G.spyScore} / 5</span>
+    </div>
+    <div class="score-row">
+      <span class="score-label">🕵️ الجواسيس كانوا</span>
+      <span class="score-value r" style="font-size:0.85rem">${spyNames}</span>
+    </div>
+    <div class="score-row">
+      <span class="score-label">🛡️ المقاومة كانوا</span>
+      <span class="score-value g" style="font-size:0.85rem">${resistNames}</span>
+    </div>
+  `;
+}
+
+function restartGame() {
+  showScreen('welcome');
+}
+
+// ===== MODAL =====
+let modalCallback = null;
+
+function showModal(icon, title, body, callback, type = 'neutral') {
+  document.getElementById('modal-icon').textContent = icon;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-title').className = 'modal-title ' + type;
+  document.getElementById('modal-body').textContent = body;
+  modalCallback = callback;
+  document.getElementById('modal').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+  if (modalCallback) { modalCallback(); modalCallback = null; }
+}
+
+// ===== UTILS =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// Initialize
+selectCount(5);
+document.querySelector('.count-btn').classList.add('selected');
+buildInputs(5);
+</script>
+</body>
+</html>
